@@ -6,7 +6,7 @@ A web application built with **Next.js** to display and compare engagement metri
 
 ##  Live Demo
 
-> 🔗 https://your-deployment-url.vercel.app
+>  [https://your-deployment-url.vercel.app](https://social-dashboard-test.vercel.app)
 
 ---
 
