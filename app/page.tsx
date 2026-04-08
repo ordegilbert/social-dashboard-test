@@ -1,65 +1,153 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import useSWR from "swr";
+import SocialCard from "./components/SocialCard";
+import { useDebounce } from "./hooks/useDebounce";
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch");
+  return res.json();
+};
 
 export default function Home() {
+  const [youtube, setYoutube] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [tiktok, setTiktok] = useState("");
+
+  const debouncedYoutube = useDebounce(youtube, 500);
+  const debouncedInstagram = useDebounce(instagram, 500);
+  const debouncedTiktok = useDebounce(tiktok, 500);
+
+  const ytKey =
+    debouncedYoutube.length >= 3
+      ? `/api/youtube?username=${debouncedYoutube}`
+      : null;
+
+  const igKey =
+    debouncedInstagram.length >= 3
+      ? `/api/instagram?username=${debouncedInstagram}`
+      : null;
+
+  const ttKey =
+    debouncedTiktok.length >= 3
+      ? `/api/tiktok?username=${debouncedTiktok}`
+      : null;
+
+  const {
+    data: yt,
+    isLoading: ytLoading,
+    error: ytError,
+  } = useSWR(ytKey, fetcher);
+
+  const {
+    data: ig,
+    isLoading: igLoading,
+    error: igError,
+  } = useSWR(igKey, fetcher);
+
+  const {
+    data: tt,
+    isLoading: ttLoading,
+    error: ttError,
+  } = useSWR(ttKey, fetcher);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl text-black font-bold">
+            Social Media Dashboard
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-500">
+            Track views across platforms
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="grid md:grid-cols-3 gap-3 text-black">
+          <input
+            className="p-3 rounded-lg border focus:ring-2 focus:ring-red-500"
+            placeholder="YouTube Username"
+            value={youtube}
+            onChange={(e) => setYoutube(e.target.value)}
+          />
+
+          <input
+            className="p-3 rounded-lg border focus:ring-2 focus:ring-pink-500"
+            placeholder="Instagram Username"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+          />
+
+          <input
+            className="p-3 rounded-lg border focus:ring-2 focus:ring-black"
+            placeholder="TikTok Username"
+            value={tiktok}
+            onChange={(e) => setTiktok(e.target.value)}
+          />
         </div>
-      </main>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* YOUTUBE */}
+          <div>
+            {ytLoading ? (
+              <Skeleton />
+            ) : ytError ? (
+              <ErrorBox label="YouTube failed" />
+            ) : yt ? (
+              <SocialCard platform="YouTube" data={yt} />
+            ) : null}
+          </div>
+
+          {/* INSTAGRAM */}
+          <div>
+            {igLoading ? (
+              <Skeleton />
+            ) : igError ? (
+              <ErrorBox label="Instagram failed" />
+            ) : ig ? (
+              <SocialCard platform="Instagram" data={ig} />
+            ) : null}
+          </div>
+
+          {/* TIKTOK */}
+          <div>
+            {ttLoading ? (
+              <Skeleton />
+            ) : ttError ? (
+              <ErrorBox label="TikTok failed" />
+            ) : tt ? (
+              <SocialCard platform="TikTok" data={tt} />
+            ) : null}
+          </div>
+        </div>
+
+        {!yt && !ig && !tt && (
+          <div className="text-center text-gray-400 mt-10">
+            Enter at least one account to begin
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
+
+function Skeleton() {
+  return (
+    <div className="animate-pulse bg-white p-6 rounded-2xl shadow space-y-3">
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="h-10 bg-gray-200 rounded"></div>
+      <div className="h-4 bg-gray-200 rounded"></div>
+      <div className="h-4 bg-gray-200 rounded"></div>
+    </div>
+  );
+}
+
+function ErrorBox({ label }: { label: string }) {
+  return (
+    <div className="bg-red-100 text-red-600 p-4 rounded-xl text-center">
+      {label}
     </div>
   );
 }
